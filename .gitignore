@@ -1,0 +1,36 @@
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local research database and downloaded source data
+/data/
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.zip
+*.tif
+*.tif.gz
+*.csv
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+secrets.toml
+*.pem
+*.key
+
+# Logs, backups and editor files
+*.log
+backups/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
