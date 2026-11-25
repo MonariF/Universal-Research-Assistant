@@ -1,70 +1,59 @@
-# Universal Research Intelligence Assistant
+# Universal Research Intelligence Assistant (URIA)
 
-A modular, researcher-led Streamlit workbench for journal discovery, literature scanning, open-dataset discovery, climate and agriculture data workflows, and research-project planning.
+A modular, researcher-led Streamlit workbench for journal discovery, literature scanning, open-dataset discovery, climate and agriculture data workflows, research-project planning and conversational AI research assistance.
 
-**Published baseline: Phase 3.1.1 — Research Brief Quality Fix.**
+**Current implementation: Phases 1.1, 2, 2.2, 2.3, 3.1 and 3.2.**
 
-## Current capabilities
+## Implemented capabilities
 
 ### Phase 1.1 — Journal discovery and publication-readiness screening
-- Discover journal records through the OpenAlex Sources API.
-- Check journal metadata through Crossref.
-- Record evidence for publication fees, Scopus and Web of Science status, scope, peer review, author guidelines and ethics.
-- Rank a journal shortlist using transparent discovery and human-verification scores.
-- Export journal shortlists to CSV.
-
-The scores are screening aids, not journal-quality certifications or probabilities of acceptance. Unverified fee and indexing claims must be checked against official sources.
+- Discover journal records through OpenAlex Sources and check metadata through Crossref.
+- Record human-verified evidence for publication fees, Scopus and Web of Science status, scope, peer review, author guidelines and ethics.
+- Rank and export transparent journal shortlists. Scores are screening aids, not acceptance probabilities or journal-quality certifications.
 
 ### Phase 2 — Research topic, literature and dataset intelligence
-- Search scholarly records through OpenAlex.
-- Screen records using a transparent keyword-overlap relevance heuristic.
-- Explore recurring terms in the retrieved literature sample.
-- Produce candidate research questions for researcher review.
+- Search scholarly records through OpenAlex and screen using a transparent keyword-overlap heuristic.
+- Explore recurring terms and candidate research questions.
 - Discover dataset leads through Zenodo, Harvard Dataverse and World Bank indicators.
-- Export literature scan results to CSV.
-
-The app treats these results as leads; it does not claim that a candidate topic is a proven research gap.
+- Export literature scan results to CSV. Results are leads, not proof of a research gap.
 
 ### Phase 2.2 — Agriculture and climate data explorer
 - Retrieve monthly point climate data from NASA POWER.
 - Link to official FAOSTAT and CHIRPS portals and workflows.
 
 ### Phase 2.3 — Kenya agriculture and rainfall integration
-- Download public normalized FAOSTAT bulk records and filter Kenya maize production, area harvested and yield records for 2000–2025.
-- Retrieve CHIRPS v2 monthly GeoTIFF files and calculate a Kenya-wide mean from valid grid cells using a Kenya ADM0 boundary.
-- Preview an exploratory annual merge of maize yield and rainfall, with CSV export.
+- Download normalized FAOSTAT bulk records and filter Kenya maize production, area harvested and yield for 2000–2025.
+- Retrieve CHIRPS v2 monthly GeoTIFFs and calculate an unweighted Kenya-wide mean using a Kenya ADM0 boundary.
+- Preview an exploratory annual merge. Check units, flags, versions, coverage and suitability before inference. Bulk and raster downloads can be very large; start with one year.
 
-**Resource warning:** FAOSTAT's normalized archive can be large. CHIRPS monthly GeoTIFFs are global grids; a multi-year download may require several gigabytes. Begin with one year. The current CHIRPS national mean is an unweighted mean of valid grid cells, not an area-weighted national estimate. Check units, flags, coverage, versions and suitability before statistical inference.
+### Phase 3.1 — Universal research workspace
+- Structure ordinary-language ideas into candidate titles, draft objectives and keywords.
+- Save projects, update workflow status and export the local SQLite project register.
+- The brief generator is rule-based; drafts require researcher review.
 
-### Phase 3.1.1 — Universal research workspace
-- Accept a research instruction in ordinary language.
-- Structure an idea into candidate working titles, draft objectives and suggested keywords.
-- Clean common conversational lead-ins and reduce duplicated geography in title suggestions.
-- Save projects and update workflow status in a local SQLite research-project table.
-- Export the research-project register to CSV.
+### Phase 3.2 — Conversational AI research assistant
+- Chat through the OpenAI Responses API with its web-search tool.
+- Supply research-discipline, geography and study-period context.
+- Explore topics, literature, datasets, methods, R code, manuscripts and journal selection.
+- Review and explicitly approve a response before saving it to the project library.
 
-The brief generator is **rule-based**, not a hosted generative-AI model. Draft titles, objectives and keywords require researcher review and validation against literature, available data and appropriate methods.
+Phase 3.2 requires an OpenAI API key. API usage is billed separately from a ChatGPT subscription. The app reads `OPENAI_API_KEY` from the environment, Streamlit secrets or a session-only password field. Requests use `store=False`; submitted conversation content is sent to the OpenAI API. Do not submit confidential participant data or identifiable health information.
 
-## Planned capabilities — not yet implemented
-- Hosted conversational AI and research-tool orchestration.
-- Evidence-grounded research-gap validation with source citations.
-- Dataset suitability scoring and a complete human-approval workflow.
-- R/Python code generation and controlled code execution.
-- Automated manuscript drafting, LaTeX generation and journal-specific formatting.
+## Planned capabilities
+- Systematic evidence-grounded research-gap validation.
+- Dataset suitability scoring and complete human-approval workflow.
+- Controlled R/Python execution and reproducible environments.
+- Automated manuscript and LaTeX workflows with journal-specific formatting.
 - Multi-user authentication and centrally hosted database synchronisation.
-
-Human review remains essential for topic selection, data selection, analysis, interpretation and manuscript approval.
 
 ## Installation
 
-Python 3.11 is recommended.
-
-Dependencies are listed in [requirements.txt](requirements.txt). Rasterio is used for CHIRPS raster extraction.
+Python 3.11 is recommended. See [requirements.txt](requirements.txt). Rasterio supports CHIRPS raster extraction; OpenAI and python-dotenv support Phase 3.2.
 
 ### Windows
 ```bat
 py -3.11 -m venv .venv
-.venv\Scripts\activate
+.venv\\Scripts\\activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 python -m streamlit run app.py
@@ -79,25 +68,27 @@ python -m pip install -r requirements.txt
 python -m streamlit run app.py
 ```
 
-Open the local URL shown by Streamlit, usually `http://localhost:8501`.
+## OpenAI API configuration
+
+Create a private `.env` file in the project root:
+```text
+OPENAI_API_KEY=your_api_key_here
+URIA_MODEL=gpt-5.5
+```
+
+Use a model enabled for your API project and restart Streamlit after changes. Alternatively, set `OPENAI_API_KEY` in Streamlit deployment secrets. Never commit `.env` or API keys. API billing is separate from ChatGPT subscriptions.
 
 ## Local storage and backups
 
-Journal verification records and research projects are stored in `data/research_journals.db`. Phase 2.3 caches downloaded FAOSTAT and CHIRPS files under `data/phase2_3/`. These files are excluded from Git. Back up the local `data/` directory separately before upgrading or moving the application.
-
-Cloud deployments may have ephemeral local storage. Use a managed database and durable object storage before relying on hosted persistence across restarts or devices.
+Journal verification and research projects are stored in `data/research_journals.db`. FAOSTAT and CHIRPS downloads are cached under `data/phase2_3/`. These data are excluded from Git; back up `data/` separately. Hosted platforms may have ephemeral local storage; use managed database and object storage for durable multi-device deployments.
 
 ## Data sources
 
-The application calls public services and data sources including OpenAlex, Crossref, Zenodo, Harvard Dataverse, World Bank Indicators, NASA POWER, FAOSTAT, CHIRPS and geoBoundaries. Internet access is needed for retrieval. API availability, rate limits, dataset definitions and source versions can change. Retain source URLs, retrieval dates, versions and data documentation in formal research records.
+OpenAlex, Crossref, Zenodo, Harvard Dataverse, World Bank Indicators, NASA POWER, FAOSTAT, CHIRPS and geoBoundaries. Phase 3.2 also uses the OpenAI API and web-search tool. Retain source URLs, retrieval dates, versions and documentation in research records.
 
 ## Security and research ethics
 
-- Do not commit `data/`, downloaded datasets, unpublished manuscripts, participant data or confidential records.
-- Do not commit API keys, passwords, access tokens or `.streamlit/secrets.toml`.
-- The current source uses public API endpoints and contains no private provider key.
-- Review dataset licences, privacy restrictions and research ethics before using or redistributing downloaded data.
-
-## Project status
-
-This is a research-support prototype and workflow workbench, not an autonomous researcher. It must not invent citations, fabricate data or submit manuscripts without explicit human verification and approval.
+- Never commit `data/`, downloaded datasets, unpublished manuscripts, participant data, `.env`, credentials or `.streamlit/secrets.toml`.
+- Review dataset licences, privacy restrictions and research ethics before using or redistributing data.
+- Do not enter confidential participant information or identifiable health data into the conversational assistant.
+- URIA is a research-support prototype, not an autonomous researcher. Verify sources and claims; never fabricate citations or results. Human approval remains essential for topics, datasets, analysis, interpretation and manuscripts.
