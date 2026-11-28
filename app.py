@@ -1216,3 +1216,7 @@ URIA_MODEL=gpt-5.5
 
 The `.env` file must remain private and must not be uploaded to GitHub. API usage may incur separate charges under your API account. URIA sends the conversation content to the selected model provider when you submit a message. The API request uses `store=False`; do not enter confidential participant data or identifiable health information.
 """)
+
+# ================= PHASE 4: ACADEMIC OPPORTUNITIES & APPLICATION INTELLIGENCE =================
+from academic_applications import render_academic_applications
+render_academic_applications()
