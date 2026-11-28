@@ -55,7 +55,13 @@ def _db():
         id INTEGER PRIMARY KEY AUTOINCREMENT, opportunity_id INTEGER, doc_type TEXT,
         filename TEXT, filepath TEXT, content TEXT, created_at TEXT)""")
     con.execute("""CREATE TABLE IF NOT EXISTS profile (
-        id INTEGER PRIMARY KEY CHECK (id=1), profile_text TEXT, updated_at TEXT)""")
+        id INTEGER PRIMARY KEY CHECK (id=1), profile_text TEXT,
+        master_cv TEXT DEFAULT '', publication_text TEXT DEFAULT '', updated_at TEXT)""")
+    columns = {row[1] for row in con.execute("PRAGMA table_info(profile)").fetchall()}
+    if "master_cv" not in columns:
+        con.execute("ALTER TABLE profile ADD COLUMN master_cv TEXT DEFAULT ''")
+    if "publication_text" not in columns:
+        con.execute("ALTER TABLE profile ADD COLUMN publication_text TEXT DEFAULT ''")
     con.commit()
     return con
 
@@ -66,12 +72,22 @@ def _get_profile():
     con = _db()
     row = con.execute("SELECT profile_text FROM profile WHERE id=1").fetchone()
     con.close()
-    return row[0] if row else PROFILE_STARTER
+    return row[0] if row and row[0] else PROFILE_STARTER
 
-def _save_profile(value):
+def _get_profile_documents():
     con = _db()
-    con.execute("INSERT OR REPLACE INTO profile(id,profile_text,updated_at) VALUES(1,?,?)",
-                (value, _now()))
+    row = con.execute("SELECT master_cv, publication_text FROM profile WHERE id=1").fetchone()
+    con.close()
+    return (row[0] or "", row[1] or "") if row else ("", "")
+
+def _save_profile(value, master_cv=None, publication_text=None):
+    old_cv, old_publications = _get_profile_documents()
+    con = _db()
+    con.execute("""INSERT OR REPLACE INTO profile
+        (id,profile_text,master_cv,publication_text,updated_at)
+        VALUES(1,?,?,?,?)""",
+        (value, old_cv if master_cv is None else master_cv,
+         old_publications if publication_text is None else publication_text, _now()))
     con.commit()
     con.close()
 
@@ -281,27 +297,26 @@ def render_academic_applications():
         st.subheader("Your permanent academic profile")
         st.write("This profile is the baseline for tailoring. Keep it factual and update it when your CV, publications, roles or qualifications change.")
         current = _get_profile()
+        saved_cv, saved_publications = _get_profile_documents()
         edited = st.text_area("Master profile", value=current, height=260, key="p4_profile_text")
-        cv_upload = st.file_uploader("Upload your latest master CV (DOCX, PDF, TXT or MD)", type=["docx", "pdf", "txt", "md"], key="p4_master_cv")
-        pub_upload = st.file_uploader("Optional: upload a separate publication list (DOCX, PDF, TXT or MD)", type=["docx", "pdf", "txt", "md"], key="p4_publications")
-        if st.button("Save master profile", type="primary", key="p4_save_profile"):
-            _save_profile(edited)
-            st.success("Master profile saved.")
+        cv_upload = st.file_uploader("Upload or replace your master CV (DOCX, PDF, TXT or MD)", type=["docx", "pdf", "txt", "md"], key="p4_master_cv")
+        pub_upload = st.file_uploader("Upload or replace your publication list (DOCX, PDF, TXT or MD)", type=["docx", "pdf", "txt", "md"], key="p4_publications")
         if cv_upload:
             try:
-                extracted = _extract_upload(cv_upload)
-                st.session_state["p4_master_cv_text"] = extracted
-                st.success(f"Master CV read: {cv_upload.name} ({len(extracted.split())} words).")
+                saved_cv = _extract_upload(cv_upload)
+                st.success(f"Master CV read: {cv_upload.name} ({len(saved_cv.split())} words).")
             except Exception as exc:
                 st.error(f"Could not read CV: {exc}")
         if pub_upload:
             try:
-                pub_text = _extract_upload(pub_upload)
-                st.session_state["p4_publication_text"] = pub_text
+                saved_publications = _extract_upload(pub_upload)
                 st.success(f"Publication list read: {pub_upload.name}.")
             except Exception as exc:
                 st.error(f"Could not read publication list: {exc}")
-        st.caption("Uploaded source documents remain in this Streamlit session unless you explicitly generate and archive an application document. The master profile is stored locally in the application's SQLite database.")
+        if st.button("Save master profile and source documents", type="primary", key="p4_save_profile"):
+            _save_profile(edited, saved_cv, saved_publications)
+            st.success("Master profile, CV text and publication record saved locally.")
+        st.caption(f"Saved source record: {len(saved_cv.split())} CV words and {len(saved_publications.split())} publication-list words. These are retained in the local SQLite profile for future applications.")
 
     with intake:
         st.subheader("1. Enter the opportunity")
@@ -356,8 +371,7 @@ def render_academic_applications():
             st.download_button("Download opportunity analysis", opportunity["analysis"], file_name=f"opportunity_{opportunity['id']}_analysis.md", mime="text/markdown")
             st.subheader("3. Prepare tailored documents")
             profile = _get_profile()
-            master_cv = st.session_state.get("p4_master_cv_text", "")
-            publication_text = st.session_state.get("p4_publication_text", "")
+            master_cv, publication_text = _get_profile_documents()
             if publication_text:
                 master_cv += "\n\nVERIFIED PUBLICATION LIST:\n" + publication_text
             if not master_cv.strip():
