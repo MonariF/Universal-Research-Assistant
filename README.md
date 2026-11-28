@@ -92,3 +92,17 @@ OpenAlex, Crossref, Zenodo, Harvard Dataverse, World Bank Indicators, NASA POWER
 - Review dataset licences, privacy restrictions and research ethics before using or redistributing data.
 - Do not enter confidential participant information or identifiable health data into the conversational assistant.
 - URIA is a research-support prototype, not an autonomous researcher. Verify sources and claims; never fabricate citations or results. Human approval remains essential for topics, datasets, analysis, interpretation and manuscripts.
+
+
+### Phase 4 — Academic Opportunities & Application Intelligence
+- Analyse official conference, grant, fellowship, scholarship and research-visit opportunity pages from a pasted URL; paste call text when a portal blocks automated access.
+- Extract eligibility, deadlines, funding, submission instructions, document requirements, word limits and selection criteria; unknown information is explicitly flagged for verification.
+- Generate opportunity-tailored academic CVs, abstracts, proposals, motivation and cover letters, research statements, budgets and compliance reports.
+- Apply ATS-friendly CV structure and run basic readability checks. The researcher must review final formatting in the actual portal and confirm every claim.
+- Maintain a master academic profile, accept an uploaded master CV/publication record, and archive generated DOCX documents and opportunity analyses in a local SQLite register.
+- Optionally email generated documents to the applicant using separately configured Gmail SMTP credentials.
+- The system does not autonomously sign declarations, pay fees or submit applications. Final review and submission remain under the applicant's control.
+
+Phase 4 requires `beautifulsoup4`, `python-docx` and `pypdf`. Configure `OPENAI_API_KEY` and optionally `URIA_MODEL` in the private `.env` file. For optional Gmail SMTP filing, configure `URIA_EMAIL_SENDER`, `URIA_EMAIL_APP_PASSWORD` and optionally `URIA_EMAIL_RECIPIENT`. Never commit credentials. The SMTP option uses a Gmail App Password, not your normal account password.
+
+**Local archive:** opportunity records, profile text and generated DOCX files are stored under `data/academic_applications/`. Back up this folder; it is excluded from Git.
